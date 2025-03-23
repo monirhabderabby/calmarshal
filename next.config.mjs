@@ -7,6 +7,9 @@ const nextConfig = {
         }, {
             hostname: "avatars.githubusercontent.com",
             protocol: "https"
+        }, {
+            hostname: 'n7yfiv5t77.ufs.sh',
+            protocol: "https"
         }]
     }
 };

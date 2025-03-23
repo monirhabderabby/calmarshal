@@ -2,7 +2,7 @@
 
 import { prisma } from "@/lib/db";
 import { requireUser } from "@/lib/hooks";
-import { onboardingSchemaValidation } from "@/lib/zodSchemas";
+import { onboardingSchemaValidation, settingsSchema } from "@/lib/zodSchemas";
 import { parseWithZod } from "@conform-to/zod";
 import { redirect } from "next/navigation";
 
@@ -36,6 +36,31 @@ export async function onboardingAction(prevState: any, formData: FormData) {
     data: {
       userName: submission.value.userName,
       name: submission.value.fullName,
+    },
+  });
+
+  return redirect("/onboarding/grant-id");
+}
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export async function SettingsAction(prevState: any, formData: FormData) {
+  const session = await requireUser();
+
+  const submission = parseWithZod(formData, {
+    schema: settingsSchema,
+  });
+
+  if (submission.status !== "success") {
+    return submission.reply();
+  }
+
+  await prisma.user.update({
+    where: {
+      id: session.user?.id,
+    },
+    data: {
+      name: submission.value.fullName,
+      image: submission.value.profileImage,
     },
   });
 
