@@ -9,13 +9,32 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
+import { prisma } from "@/lib/db";
 import { requireUser } from "@/lib/hooks";
 import Logo from "@/public/logo.png";
 import { Menu } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
+import { redirect } from "next/navigation";
 import DashboardLinks from "../components/dashboard-links";
 import { ThemeToggle } from "../components/toggle-theme";
+
+async function getData(userId: string) {
+  const data = await prisma.user.findUnique({
+    where: {
+      id: userId,
+    },
+    select: {
+      userName: true,
+    },
+  });
+
+  if (!data?.userName) {
+    return redirect("/onboarding");
+  }
+
+  return data;
+}
 
 export default async function DashboardLayout({
   children,
@@ -23,6 +42,7 @@ export default async function DashboardLayout({
   children: React.ReactNode;
 }>) {
   const session = await requireUser();
+  await getData(session?.user?.id as string);
 
   return (
     <>
