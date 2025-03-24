@@ -4,6 +4,7 @@ import { prisma } from "@/lib/db";
 import { requireUser } from "@/lib/hooks";
 import { onboardingSchemaValidation, settingsSchema } from "@/lib/zodSchemas";
 import { parseWithZod } from "@conform-to/zod";
+import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -106,4 +107,44 @@ export async function SettingsAction(prevState: any, formData: FormData) {
   });
 
   return redirect("/dashboard");
+}
+
+export async function updateAvailability(formData: FormData) {
+  await requireUser();
+
+  const rowData = Object.fromEntries(formData.entries());
+
+  const availabilityData = Object.keys(rowData)
+    .filter((key) => key.startsWith("id-"))
+    .map((key) => {
+      const id = key.replace("id-", "");
+
+      return {
+        id,
+        isActive: rowData[`isActive-${id}`] === "on",
+        fromTime: rowData[`fromTime-${id}`] as string,
+        tillTime: rowData[`tillTime-${id}`] as string,
+      };
+    });
+
+  try {
+    await prisma.$transaction(
+      availabilityData.map((item) =>
+        prisma.availability.update({
+          where: {
+            id: item.id,
+          },
+          data: {
+            isActive: item.isActive,
+            fromTime: item.fromTime,
+            tillTime: item.tillTime,
+          },
+        })
+      )
+    );
+
+    revalidatePath("/dashboard/availability");
+  } catch (error) {
+    console.log(error);
+  }
 }
