@@ -2,6 +2,7 @@
 
 import { prisma } from "@/lib/db";
 import { requireUser } from "@/lib/hooks";
+import { nylas } from "@/lib/nylas";
 import {
   eventTypeSchema,
   onboardingSchemaValidation,
@@ -180,4 +181,48 @@ export async function CreateEventTypeAction(
   });
 
   return redirect("/dashboard");
+}
+
+export async function CreateEvent() {
+  const session = await requireUser();
+
+  if (!session.user?.id) {
+    return {
+      success: false,
+      message: "User not found",
+    };
+  }
+
+  const user = await nylas.events.create({
+    identifier: "19d6d262-e05b-400b-b9fa-afcfec28c438",
+    requestBody: {
+      title: "Test Event From Next.js Project",
+      description: "Test Event Description",
+      when: {
+        startTime: Math.floor(new Date().getTime() / 1000),
+        endTime: Math.floor(new Date().getTime() / 1000) + 60 * 60,
+      },
+      conferencing: {
+        autocreate: {},
+        provider: "Google Meet",
+      },
+      participants: [
+        {
+          name: "Test User",
+          email: "monir.bdcalling@gmail.com",
+          status: "yes",
+        },
+      ],
+    },
+    queryParams: {
+      calendarId: "monirhrabby.personal@gmail.com",
+      notifyParticipants: true,
+    },
+  });
+
+  return {
+    success: true,
+    message: "Event created successfully",
+    data: user,
+  };
 }
