@@ -1,4 +1,5 @@
 import RanderCalendar from "@/app/components/booking-form/render-calendar";
+import TimeTable from "@/app/components/booking-form/time-table";
 import { Card, CardContent } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { prisma } from "@/lib/db";
@@ -43,10 +44,21 @@ async function getData(username: string, eventUrl: string) {
 
 const Page = async ({
   params,
+  searchParams,
 }: {
   params: { username: string; eventUrl: string };
+  searchParams: { date?: string };
 }) => {
   const data = await getData(params.username, params.eventUrl);
+  const selectedDate = searchParams.date
+    ? new Date(searchParams.date)
+    : new Date();
+
+  const formattedDate = new Intl.DateTimeFormat("en-US", {
+    weekday: "long",
+    day: "numeric",
+    month: "long",
+  }).format(selectedDate);
 
   return (
     <div className="min-h-screen w-screen flex items-center justify-center">
@@ -74,7 +86,7 @@ const Page = async ({
                 <CalendarX2 className="size-4 mr-2 text-primary" />
 
                 <span className="text-sm font-medium text-muted-foreground">
-                  23. Sept 2024
+                  {formattedDate}
                 </span>
               </p>
 
@@ -99,6 +111,7 @@ const Page = async ({
           <RanderCalendar availability={data.user?.availability ?? []} />
 
           <Separator orientation="vertical" className="h-full w-[1px]" />
+          <TimeTable selectedDate={selectedDate} userName={params.username} />
         </CardContent>
       </Card>
     </div>
